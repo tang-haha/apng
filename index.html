@@ -323,8 +323,11 @@
       }
 
       .placeholder {
-        width: min(92%, 760px);
-        min-height: 100%;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(calc(100% - 48px), 760px);
         color: #637180;
         text-align: center;
         padding: 18px;

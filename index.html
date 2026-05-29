@@ -488,7 +488,7 @@
             <div class="effect-stage hidden" id="effectStage">
               <canvas class="effect-layer" id="effectGlow"></canvas>
               <canvas class="effect-layer" id="effectSparkCanvas"></canvas>
-              <img id="effectImage" alt="动效预览" />
+              <img id="effectImage" class="hidden" alt="动效预览" />
             </div>
             <div class="placeholder" id="effectPlaceholder">
               <div class="placeholder-icon" aria-hidden="true">
@@ -1439,6 +1439,7 @@
           state.imageReady = true;
           state.smoothedFloat = 0;
           state.lastFrameTime = 0;
+          effectImage.classList.remove("hidden");
           effectStage.classList.remove("hidden");
           effectPlaceholder.classList.add("hidden");
           effectTag.textContent = "状态：动效运行中";
@@ -1467,6 +1468,7 @@
           state.smoothedFloat = 0;
           state.lastFrameTime = 0;
           effectImage.src = "";
+          effectImage.classList.add("hidden");
           effectImage.style.filter = "";
           effectImage.style.opacity = "1";
           effectImage.style.transform = "translate3d(0,0,0)";

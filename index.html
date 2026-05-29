@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>动效与序列帧工具箱</title>
+    <style>
+      :root {
+        --bg-1: #f6f2e9;
+        --bg-2: #efe8dc;
+        --surface: rgba(255, 255, 255, 0.9);
+        --line: #d8d0c2;
+        --text: #1f2a36;
+        --sub: #5f6f80;
+        --brand: #146f66;
+        --brand-soft: #c8f0eb;
+        --hot: #d95f2b;
+        --hot-soft: #ffd7c3;
+        --shadow: 0 20px 44px rgba(31, 42, 54, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        background:
+          radial-gradient(circle at 10% 10%, rgba(255, 217, 188, 0.52), transparent 30%),
+          radial-gradient(circle at 90% 12%, rgba(171, 236, 228, 0.55), transparent 34%),
+          linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      }
+
+      .shell {
+        width: min(1260px, calc(100vw - 28px));
+        margin: 18px auto;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 252, 247, 0.65));
+        box-shadow: var(--shadow);
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(24px, 3vw, 38px);
+        line-height: 1.05;
+      }
+
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--sub);
+        font-size: 13px;
+      }
+
+      .tabs {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.88);
+        overflow: hidden;
+      }
+
+      .tab-btn {
+        border: 0;
+        background: transparent;
+        color: var(--text);
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .tab-btn.active {
+        background: linear-gradient(180deg, var(--brand-soft), #b7ebe3);
+      }
+
+      .panel {
+        display: none;
+      }
+
+      .panel.active {
+        display: grid;
+      }
+
+      .tool-grid {
+        grid-template-columns: minmax(320px, 430px) minmax(420px, 1fr);
+        gap: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--surface);
+      }
+
+      .left {
+        padding: 18px;
+        display: grid;
+        align-content: start;
+        gap: 12px;
+      }
+
+      .right {
+        padding: 14px;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        gap: 10px;
+      }
+
+      .upload-zone {
+        border: 2px dashed #bfc8ba;
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at top right, rgba(200, 240, 235, 0.42), transparent 44%),
+          radial-gradient(circle at bottom left, rgba(255, 215, 195, 0.38), transparent 42%),
+          #fff;
+        min-height: 132px;
+        padding: 16px;
+        display: grid;
+        place-content: center;
+        text-align: center;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      .upload-zone.drag {
+        border-color: var(--brand);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 24px rgba(20, 111, 102, 0.2);
+      }
+
+      .upload-zone strong {
+        font-size: 16px;
+      }
+
+      .upload-zone p {
+        margin: 8px 0 0;
+        font-size: 12px;
+        color: var(--sub);
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .btn {
+        border: 1px solid #b7c0b2;
+        border-radius: 11px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+      }
+
+      .btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: var(--brand);
+        box-shadow: 0 10px 18px rgba(20, 111, 102, 0.16);
+      }
+
+      .btn:disabled {
+        opacity: 0.56;
+        cursor: not-allowed;
+      }
+
+      .btn.primary {
+        border-color: rgba(217, 95, 43, 0.46);
+        background: linear-gradient(180deg, var(--hot-soft), #ffc7a9);
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        color: var(--sub);
+        font-size: 12px;
+      }
+
+      .field input[type="range"] {
+        width: 100%;
+        accent-color: var(--hot);
+      }
+
+      .field select {
+        border: 1px solid #c4ccb8;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        padding: 8px 10px;
+      }
+
+      .summary {
+        border: 1px solid #c9d0c1;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px;
+        display: grid;
+        gap: 4px;
+        font-size: 13px;
+      }
+
+      .summary strong {
+        font-size: 14px;
+      }
+
+      .names {
+        color: #687787;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .names.hidden {
+        display: none;
+      }
+
+      .meter {
+        margin-top: 2px;
+        border: 1px solid #c6ccbf;
+        border-radius: 999px;
+        height: 11px;
+        overflow: hidden;
+        background: #f4f5f0;
+      }
+
+      .meter > span {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--brand), var(--hot));
+        transition: width 180ms ease;
+      }
+
+      .status {
+        margin: 7px 0 0;
+        min-height: 20px;
+        font-size: 13px;
+        color: var(--sub);
+      }
+
+      .status.error {
+        color: #ad2e1c;
+      }
+
+      .status.success {
+        color: #0e756b;
+      }
+
+      .preview {
+        position: relative;
+        min-height: 430px;
+        border: 1px solid #ccd2c6;
+        border-radius: 16px;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top left, rgba(255, 215, 195, 0.42), transparent 38%),
+          radial-gradient(circle at bottom right, rgba(200, 240, 235, 0.5), transparent 42%),
+          #fff;
+      }
+
+      .preview::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border: 1px dashed rgba(31, 42, 54, 0.16);
+        border-radius: 10px;
+        pointer-events: none;
+      }
+
+      .preview-note {
+        border: 1px solid #cfd6ca;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.87);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .tag {
+        border: 1px solid #c6cec1;
+        border-radius: 999px;
+        background: #fff;
+        white-space: nowrap;
+        padding: 4px 8px;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .placeholder {
+        color: #637180;
+        text-align: center;
+        padding: 18px;
+        z-index: 1;
+      }
+
+      .placeholder strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .seq-preview,
+      .effect-preview {
+        max-width: min(92%, 760px);
+        max-height: min(74vh, 560px);
+        object-fit: contain;
+        z-index: 1;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .effect-stage {
+        position: relative;
+        width: min(92%, 760px);
+        aspect-ratio: 4 / 3;
+        display: grid;
+        place-items: center;
+        z-index: 1;
+      }
+
+      .effect-stage img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        filter: none;
+      }
+
+      .effect-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+
+      @media (max-width: 980px) {
+        .tool-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .actions {
+          grid-template-columns: 1fr;
+        }
+
+        .preview {
+          min-height: 320px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>动效与序列帧工具箱</h1>
+          <p class="subtitle">一个网站里同时提供：图片发光动效预览 + 序列帧 ZIP 转 GIF</p>
+        </div>
+        <div class="tabs" role="tablist" aria-label="工具切换">
+          <button class="tab-btn active" id="tabEffect" data-panel="effectPanel" role="tab" aria-selected="true">生成动效</button>
+          <button class="tab-btn" id="tabSequence" data-panel="sequencePanel" role="tab" aria-selected="false">序列帧转 GIF</button>
+        </div>
+      </header>
+
+      <section class="panel tool-grid active" id="effectPanel" aria-labelledby="tabEffect">
+        <article class="card left">
+          <div class="upload-zone" id="effectDropzone">
+            <strong>拖拽图片到这里，或点击按钮上传</strong>
+            <p>支持 PNG、JPG、WEBP。建议透明底 PNG，边缘辉光更自然。</p>
+          </div>
+
+          <div class="actions">
+            <label class="btn" for="effectFileInput">选择图片</label>
+            <button class="btn" id="effectResetBtn" type="button">清空预览</button>
+          </div>
+
+          <input id="effectFileInput" type="file" accept="image/png,image/jpeg,image/webp" />
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="effectIntensity"><span>辉光强度</span><span id="effectIntensityVal">84</span></label>
+              <input id="effectIntensity" type="range" min="10" max="100" value="84" />
+            </div>
+            <div class="field">
+              <label for="effectSpark"><span>闪烁密度</span><span id="effectSparkVal">64</span></label>
+              <input id="effectSpark" type="range" min="5" max="90" value="64" />
+            </div>
+            <div class="field">
+              <label for="effectSpeed"><span>粒子速率</span><span id="effectSpeedVal">100%</span></label>
+              <input id="effectSpeed" type="range" min="40" max="160" value="100" />
+            </div>
+            <div class="field">
+              <label for="effectTone">辉光色调</label>
+              <select id="effectTone">
+                <option value="teal">青绿科技</option>
+                <option value="amber">琥珀火花</option>
+                <option value="blue" selected>冰蓝荧光（参考图）</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="summary">
+            <strong>动效说明</strong>
+            <span>仅做实时预览，不改原图内容。</span>
+            <span id="effectMeta">未上传图片</span>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="effectExportBtn" type="button" disabled>导出动效 GIF</button>
+            <button class="btn" id="effectExportApngBtn" type="button" disabled>导出动效 APNG（<=10MB）</button>
+          </div>
+
+          <div class="meter"><span id="effectMeter"></span></div>
+          <p class="status" id="effectExportProgress">导出进度：0%</p>
+          <p class="status" id="effectStatus">等待上传图片...</p>
+        </article>
+
+        <article class="card right">
+          <div class="preview">
+            <div class="effect-stage hidden" id="effectStage">
+              <canvas class="effect-layer" id="effectGlow"></canvas>
+              <canvas class="effect-layer" id="effectSparkCanvas"></canvas>
+              <img id="effectImage" alt="动效预览" />
+            </div>
+            <div class="placeholder" id="effectPlaceholder">
+              <strong>这里显示动效预览</strong>
+              上传图片后自动生成发光与闪烁效果。
+            </div>
+          </div>
+          <div class="preview-note">
+            <span class="tag" id="effectTag">状态：未加载</span>
+            <span id="effectInfo">图像信息：-</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel tool-grid" id="sequencePanel" aria-labelledby="tabSequence">
+        <article class="card left">
+          <div class="upload-zone" id="seqDropzone">
+            <strong>拖拽 ZIP 或图片文件夹到这里</strong>
+            <p>支持 PNG、JPG、WEBP、BMP。会自动按文件名排序。</p>
+          </div>
+
+          <div class="actions">
+            <label class="btn" for="seqZipInput">选择 ZIP 包</label>
+            <label class="btn" for="seqFolderInput">选择图片文件夹</label>
+          </div>
+
+          <input id="seqZipInput" type="file" accept=".zip,application/zip" />
+          <input id="seqFolderInput" type="file" accept="image/*" webkitdirectory multiple />
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="seqFps"><span>帧率 FPS</span><span id="seqFpsVal">12</span></label>
+              <input id="seqFps" type="range" min="1" max="60" value="12" />
+            </div>
+            <div class="field">
+              <label for="seqQuality"><span>GIF 质量</span><span id="seqQualityVal">10</span></label>
+              <input id="seqQuality" type="range" min="1" max="20" value="10" />
+            </div>
+            <div class="field">
+              <label for="seqMaxWidth">输出宽度</label>
+              <select id="seqMaxWidth">
+                <option value="0" selected>跟随原图</option>
+                <option value="1920">1920 px</option>
+                <option value="1280">1280 px</option>
+                <option value="1080">1080 px</option>
+                <option value="720">720 px</option>
+                <option value="512">512 px</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="seqFit">画面适配</label>
+              <select id="seqFit">
+                <option value="contain" selected>完整显示（contain）</option>
+                <option value="cover">铺满画面（cover）</option>
+                <option value="stretch">拉伸填充（stretch）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="seqLoop">循环方式</label>
+              <select id="seqLoop">
+                <option value="infinite" selected>无限循环</option>
+                <option value="once">仅播放一次</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="summary" id="seqSummary">
+            <strong>尚未载入序列帧</strong>
+            <span id="seqFrameCount">帧数：0</span>
+            <span id="seqFrameSize">尺寸：-</span>
+            <span id="seqHint">请先上传 ZIP 或文件夹。</span>
+            <div class="names hidden" id="seqNames"></div>
+          </div>
+
+          <button class="btn primary" id="seqConvertBtn" type="button" disabled>开始转换 GIF</button>
+          <button class="btn" id="seqDownloadBtn" type="button" disabled>下载 GIF</button>
+
+          <div class="meter"><span id="seqMeter"></span></div>
+          <p class="status" id="seqStatus">等待上传...</p>
+        </article>
+
+        <article class="card right">
+          <div class="preview">
+            <img class="seq-preview hidden" id="seqFirstPreview" alt="首帧预览" />
+            <img class="seq-preview hidden" id="seqGifPreview" alt="GIF 预览" />
+            <div class="placeholder" id="seqPlaceholder">
+              <strong>这里会显示预览</strong>
+              上传后先看首帧，转换完成后自动切到 GIF。
+            </div>
+          </div>
+          <div class="preview-note">
+            <span class="tag" id="seqTag">预览：未加载</span>
+            <span id="seqOutputInfo">输出信息：-</span>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <script>
+      (function setupTabs() {
+        const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
+        const panels = Array.from(document.querySelectorAll(".panel"));
+
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const target = button.getAttribute("data-panel");
+
+            tabButtons.forEach((item) => {
+              const active = item === button;
+              item.classList.toggle("active", active);
+              item.setAttribute("aria-selected", active ? "true" : "false");
+            });
+
+            panels.forEach((panel) => {
+              panel.classList.toggle("active", panel.id === target);
+            });
+          });
+        });
+      })();
+
+      (function setupEffectTool() {
+        const effectDropzone = document.getElementById("effectDropzone");
+        const effectFileInput = document.getElementById("effectFileInput");
+        const effectResetBtn = document.getElementById("effectResetBtn");
+        const effectExportBtn = document.getElementById("effectExportBtn");
+        const effectExportApngBtn = document.getElementById("effectExportApngBtn");
+        const effectStage = document.getElementById("effectStage");
+        const effectImage = document.getElementById("effectImage");
+        const effectGlow = document.getElementById("effectGlow");
+        const effectSparkCanvas = document.getElementById("effectSparkCanvas");
+        const effectPlaceholder = document.getElementById("effectPlaceholder");
+        const effectStatus = document.getElementById("effectStatus");
+        const effectTag = document.getElementById("effectTag");
+        const effectInfo = document.getElementById("effectInfo");
+        const effectMeta = document.getElementById("effectMeta");
+        const effectMeter = document.getElementById("effectMeter");
+        const effectExportProgress = document.getElementById("effectExportProgress");
+        const effectIntensity = document.getElementById("effectIntensity");
+        const effectIntensityVal = document.getElementById("effectIntensityVal");
+        const effectSpark = document.getElementById("effectSpark");
+        const effectSparkVal = document.getElementById("effectSparkVal");
+        const effectSpeed = document.getElementById("effectSpeed");
+        const effectSpeedVal = document.getElementById("effectSpeedVal");
+        const effectTone = document.getElementById("effectTone");
+        const effectGifWorkerRemote = "https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.worker.js";
+
+        const toneMap = {
+          teal: {
+            core: { r: 20, g: 152, b: 142 },
+            soft: { r: 188, g: 255, b: 246 },
+          },
+          amber: {
+            core: { r: 219, g: 95, b: 43 },
+            soft: { r: 255, g: 224, b: 171 },
+          },
+          blue: {
+            core: { r: 28, g: 157, b: 255 },
+            soft: { r: 205, g: 244, b: 255 },
+          },
+        };
+
+        const state = {
+          objectUrl: "",
+          edgePoints: [],
+          edgeCanvas: null,
+          sparks: [],
+          rafId: 0,
+          imageReady: false,
+          busy: false,
+          workerScriptUrl: "",
+          dpr: window.devicePixelRatio || 1,
+          rectWidth: 0,
+          rectHeight: 0,
+          glowCtx: null,
+          sparkCtx: null,
+          smoothedFloat: 0,
+          lastFrameTime: 0,
+          pakoReadyPromise: null,
+        };
+
+        effectImage.style.willChange = "transform, opacity, filter";
+
+        function setStatus(text, type) {
+          effectStatus.textContent = text;
+          effectStatus.classList.remove("error", "success");
+
+          if (type) {
+            effectStatus.classList.add(type);
+          }
+        }
+
+        function setMeter(value) {
+          effectMeter.style.width = Math.max(0, Math.min(100, value)) + "%";
+        }
+
+        function setExportProgress(value, detail) {
+          const percent = Math.max(0, Math.min(100, value));
+          setMeter(percent);
+          effectExportProgress.textContent = "导出进度：" + Math.round(percent) + "%" + (detail ? "（" + detail + "）" : "");
+        }
+
+        function setBusy(flag) {
+          state.busy = flag;
+          effectExportBtn.disabled = flag || !state.imageReady;
+          effectExportApngBtn.disabled = flag || !state.imageReady;
+          effectResetBtn.disabled = flag;
+          effectFileInput.disabled = flag;
+          effectIntensity.disabled = flag;
+          effectSpark.disabled = flag;
+          effectSpeed.disabled = flag;
+          effectTone.disabled = flag;
+        }
+
+        function buildEffectGifName() {
+          const now = new Date();
+          const yyyy = String(now.getFullYear());
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          const hh = String(now.getHours()).padStart(2, "0");
+          const mi = String(now.getMinutes()).padStart(2, "0");
+          const ss = String(now.getSeconds()).padStart(2, "0");
+          return "png-glow-effect-" + yyyy + mm + dd + "-" + hh + mi + ss + ".gif";
+        }
+
+        function buildEffectApngName() {
+          const now = new Date();
+          const yyyy = String(now.getFullYear());
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          const hh = String(now.getHours()).padStart(2, "0");
+          const mi = String(now.getMinutes()).padStart(2, "0");
+          const ss = String(now.getSeconds()).padStart(2, "0");
+          return "png-glow-effect-" + yyyy + mm + dd + "-" + hh + mi + ss + ".png";
+        }
+
+        function formatMB(bytes) {
+          return (bytes / (1024 * 1024)).toFixed(2) + "MB";
+        }
+
+        async function resolveEffectWorker() {
+          if (state.workerScriptUrl) {
+            return state.workerScriptUrl;
+          }
+
+          const response = await fetch(effectGifWorkerRemote, { cache: "force-cache" });
+
+          if (!response.ok) {
+            throw new Error("无法加载 GIF worker，请检查网络后重试。");
+          }
+
+          const script = await response.text();
+          state.workerScriptUrl = URL.createObjectURL(new Blob([script], { type: "application/javascript" }));
+          return state.workerScriptUrl;
+        }
+
+        async function ensurePakoLoaded() {
+          if (window.pako && typeof window.pako.deflate === "function") {
+            return;
+          }
+
+          if (!state.pakoReadyPromise) {
+            state.pakoReadyPromise = new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              script.src = "https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js";
+              script.async = true;
+              script.onload = () => resolve();
+              script.onerror = () => reject(new Error("无法加载 APNG 压缩器 pako。"));
+              document.head.appendChild(script);
+            });
+          }
+
+          await state.pakoReadyPromise;
+
+          if (!window.pako || typeof window.pako.deflate !== "function") {
+            throw new Error("APNG 压缩器未就绪，请刷新页面后重试。");
+          }
+        }
+
+        function getContainRect(srcWidth, srcHeight, outWidth, outHeight) {
+          const scale = Math.min(outWidth / srcWidth, outHeight / srcHeight);
+          const width = Math.max(1, srcWidth * scale);
+          const height = Math.max(1, srcHeight * scale);
+          const x = (outWidth - width) / 2;
+          const y = (outHeight - height) / 2;
+          return { x, y, width, height };
+        }
+
+        function drawGlowLayer(ctx, time, drawRect, tone, intensity, edgeCanvas) {
+          const pulse = 0.45 + 0.55 * Math.sin((Math.PI * 2 * time) / 3000);
+          const edgePulse = 0.5 + 0.5 * Math.sin((Math.PI * 2 * time) / 3000 + Math.PI / 6);
+
+          ctx.save();
+          ctx.globalCompositeOperation = "screen";
+
+          if (edgeCanvas) {
+            ctx.filter = "blur(" + (6 + 16 * intensity) + "px)";
+            ctx.globalAlpha = 0.16 + 0.34 * pulse * intensity;
+            ctx.drawImage(edgeCanvas, drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+
+            ctx.filter = "blur(" + (2 + 4 * intensity) + "px)";
+            ctx.globalAlpha = 0.06 + 0.14 * edgePulse * intensity;
+            ctx.drawImage(edgeCanvas, drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+
+            ctx.filter = "blur(" + (12 + 18 * intensity) + "px)";
+            ctx.globalAlpha = 0.06 + 0.18 * pulse * intensity;
+            ctx.drawImage(edgeCanvas, drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+
+            ctx.filter = "blur(" + (18 + 22 * intensity) + "px)";
+            ctx.globalAlpha = 0.03 + 0.1 * edgePulse * intensity;
+            ctx.drawImage(edgeCanvas, drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+          } else {
+            ctx.filter = "blur(" + (8 + 16 * intensity) + "px)";
+            ctx.globalAlpha = 0.14 + 0.26 * pulse * intensity;
+            ctx.drawImage(effectImage, drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+          }
+
+          ctx.restore();
+        }
+
+        function drawReferenceStyleOverlays(ctx, time, drawRect, tone, intensity) {
+          const centerX = drawRect.x + drawRect.width * 0.5;
+          const drift = Math.sin((Math.PI * 2 * time) / 2400);
+          const flash = Math.pow(0.5 + 0.5 * Math.sin((Math.PI * 2 * time) / 880), 2.2);
+          const baseRingWidth = drawRect.width * (0.74 + 0.06 * intensity + 0.04 * drift);
+          const ringHeight = drawRect.height * (0.12 + 0.03 * intensity);
+          const layers = [
+            { ratio: 0.2, widthScale: 0.94, heightScale: 0.98 },
+            { ratio: 0.5, widthScale: 1.2, heightScale: 1.12 },
+            { ratio: 0.82, widthScale: 0.72, heightScale: 0.9 },
+          ];
+
+          ctx.save();
+          ctx.globalCompositeOperation = "screen";
+          ctx.globalAlpha = 0.58;
+
+          layers.forEach((layer, idx) => {
+            const y = drawRect.y + drawRect.height * layer.ratio + Math.sin(time * 0.0011 + idx * 1.3) * (3 + 4 * intensity);
+            const width = baseRingWidth * layer.widthScale;
+            const height = ringHeight * layer.heightScale;
+            const ringAlpha = 0.22 + 0.24 * flash + intensity * 0.25;
+
+            ctx.filter = "blur(" + (7 + idx * 3) + "px)";
+            ctx.lineWidth = 2.2 + idx * 0.8;
+            ctx.strokeStyle = toRgba(tone.core, ringAlpha);
+            ctx.beginPath();
+            ctx.ellipse(centerX, y, width * 0.5, height * 0.5, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = toRgba(tone.soft, 0.44 + flash * 0.34);
+            ctx.beginPath();
+            ctx.ellipse(centerX, y, width * 0.38, height * 0.32, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const coreGlow = ctx.createRadialGradient(centerX, y, 0, centerX, y, width * 0.35);
+            coreGlow.addColorStop(0, toRgba(tone.soft, 0.16 + flash * 0.16));
+            coreGlow.addColorStop(0.58, toRgba(tone.core, 0.08 + flash * 0.12));
+            coreGlow.addColorStop(1, toRgba(tone.core, 0));
+            ctx.filter = "blur(12px)";
+            ctx.fillStyle = coreGlow;
+            ctx.beginPath();
+            ctx.ellipse(centerX, y, width * 0.56, height * 0.48, 0, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          ctx.restore();
+        }
+
+        function drawLayeredParticles(ctx, time, animatedRect, tone, pulse) {
+          const radiusScale = Math.max(0.8, Math.min(animatedRect.width, animatedRect.height) / 520);
+          const speedInput = Number.parseInt(effectSpeed.value, 10) / 100;
+          const speedRate = 1 + (speedInput - 1) * 0.45;
+          const cycleDurationMs = 3000 / speedRate;
+          const cycle = ((time % cycleDurationMs) / cycleDurationMs) * Math.PI * 2;
+
+          ctx.save();
+          ctx.globalCompositeOperation = "screen";
+          ctx.globalAlpha = 0.54 + 0.16 * pulse;
+
+          state.sparks.forEach((spark, idx) => {
+            const x = animatedRect.x + spark.anchorX * animatedRect.width + Math.sin(cycle + spark.phase * 0.62) * spark.sway * radiusScale;
+            const baseLayerY = animatedRect.y + animatedRect.height * spark.layerRatio;
+            const layerOffset = spark.layerSpread * animatedRect.height + (spark.anchorY - 0.5) * animatedRect.height * 0.08;
+            const y =
+              baseLayerY +
+              layerOffset +
+              Math.sin(cycle + spark.phase) * spark.verticalSpan * radiusScale +
+              Math.sin(cycle * 2 + spark.phase * 1.7) * spark.verticalJitter * radiusScale;
+            const twinkle = 0.5 + 0.5 * Math.sin((Math.PI * 2 * time) / 3000 + spark.phase * 0.8 + idx * 0.06);
+            const radius = (spark.radius + twinkle * 0.45) * radiusScale;
+            const layerBoost = spark.layerRatio >= 0.5 ? 0.08 : 0;
+
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 4.8);
+            gradient.addColorStop(0, toRgba(tone.soft, 0.31 + twinkle * 0.2 + layerBoost));
+            gradient.addColorStop(0.5, toRgba(tone.core, 0.14 + twinkle * 0.14 + layerBoost * 0.5));
+            gradient.addColorStop(1, toRgba(tone.core, 0));
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 4.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = toRgba(tone.soft, 0.42 + twinkle * 0.18 + layerBoost);
+            ctx.beginPath();
+            ctx.arc(x, y, Math.max(0.55, radius * 0.62), 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          ctx.restore();
+        }
+
+        function drawEffectFrameToCanvas(frameCtx, time, outWidth, outHeight, drawRect, tone, intensity) {
+          frameCtx.clearRect(0, 0, outWidth, outHeight);
+
+          const pulse = 0.45 + 0.55 * Math.sin((Math.PI * 2 * time) / 3000);
+          const boostedIntensity = Math.min(1, intensity * 1.12 + 0.06);
+          const floatOffset = Math.sin((Math.PI * 2 * time) / 3000 + Math.PI / 3) * (4 + 9 * intensity);
+          const breathingOpacity = 0.76 + 0.24 * pulse;
+          const animatedRect = {
+            x: drawRect.x,
+            y: drawRect.y + floatOffset,
+            width: drawRect.width,
+            height: drawRect.height,
+          };
+          const brightness = 1.02 + pulse * 0.34 * boostedIntensity;
+          const saturation = 1.1 + pulse * 0.26 * boostedIntensity;
+
+          frameCtx.save();
+          frameCtx.globalCompositeOperation = "source-over";
+          frameCtx.globalAlpha = breathingOpacity;
+          frameCtx.filter = "brightness(" + brightness.toFixed(3) + ") saturate(" + saturation.toFixed(3) + ")";
+          frameCtx.drawImage(effectImage, animatedRect.x, animatedRect.y, animatedRect.width, animatedRect.height);
+          frameCtx.restore();
+
+          drawGlowLayer(frameCtx, time, animatedRect, tone, boostedIntensity, state.edgeCanvas);
+          drawReferenceStyleOverlays(frameCtx, time, animatedRect, tone, boostedIntensity);
+
+          drawLayeredParticles(frameCtx, time, animatedRect, tone, pulse);
+        }
+
+        async function exportEffectGif() {
+          if (state.busy || !state.imageReady) {
+            return;
+          }
+
+          if (typeof window.GIF !== "function") {
+            setStatus("GIF 依赖未加载，请刷新页面。", "error");
+            return;
+          }
+
+          setBusy(true);
+          setStatus("正在准备导出动效 GIF...", "");
+          setExportProgress(4, "准备中");
+
+          try {
+            const workerScript = await resolveEffectWorker();
+            const maxEdge = 1024;
+            const sourceWidth = Math.max(1, effectImage.naturalWidth || 1);
+            const sourceHeight = Math.max(1, effectImage.naturalHeight || 1);
+            const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+            const outWidth = Math.max(1, Math.round(sourceWidth * scale));
+            const outHeight = Math.max(1, Math.round(sourceHeight * scale));
+            const drawRect = getContainRect(sourceWidth, sourceHeight, outWidth, outHeight);
+            const tone = toneMap[effectTone.value] || toneMap.teal;
+            const intensity = Number.parseInt(effectIntensity.value, 10) / 100;
+            const speedInput = Number.parseInt(effectSpeed.value, 10) / 100;
+            const speedRate = 1 + (speedInput - 1) * 0.45;
+            const durationMs = Math.max(1800, 3000 / speedRate);
+            const frameCount = Math.max(54, Math.round((durationMs / 1000) * 30));
+            const delay = Math.max(16, Math.round(durationMs / frameCount));
+            const loopDurationMs = delay * frameCount;
+
+            const frameCanvas = document.createElement("canvas");
+            frameCanvas.width = outWidth;
+            frameCanvas.height = outHeight;
+            const frameCtx = frameCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
+            frameCtx.imageSmoothingEnabled = true;
+            frameCtx.imageSmoothingQuality = "high";
+
+            const gif = new window.GIF({
+              workers: 2,
+              quality: 6,
+              width: outWidth,
+              height: outHeight,
+              repeat: 0,
+              transparent: 0xff00ff,
+              dither: "FloydSteinberg-serpentine",
+              workerScript,
+            });
+
+            gif.on("progress", (progress) => {
+              const percent = 68 + progress * 32;
+              setExportProgress(percent, "GIF 编码");
+              setStatus("GIF 编码中：" + Math.round(percent) + "%", "");
+            });
+
+            for (let i = 0; i < frameCount; i += 1) {
+              const time = (i / frameCount) * loopDurationMs;
+              drawEffectFrameToCanvas(frameCtx, time, outWidth, outHeight, drawRect, tone, intensity);
+              stripBackgroundAlpha(frameCtx, outWidth, outHeight, 18);
+              gif.addFrame(frameCanvas, {
+                delay,
+                copy: true,
+              });
+
+              const writeProgress = ((i + 1) / frameCount) * 68;
+              setExportProgress(writeProgress, "GIF 写帧 " + (i + 1) + "/" + frameCount);
+              setStatus("写入动效帧 " + (i + 1) + " / " + frameCount, "");
+            }
+
+            const blob = await new Promise((resolve) => {
+              gif.on("finished", resolve);
+              gif.render();
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = buildEffectGifName();
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 1500);
+
+            setExportProgress(100, "GIF 完成");
+            setStatus("导出完成，GIF 已开始下载。", "success");
+            effectInfo.textContent = "图像信息：" + outWidth + " x " + outHeight + "（导出）";
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "导出失败，请重试。";
+            setStatus(message, "error");
+            setExportProgress(0, "失败");
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        async function exportEffectApng() {
+          if (state.busy || !state.imageReady) {
+            return;
+          }
+
+          if (!window.UPNG || typeof window.UPNG.encode !== "function") {
+            setStatus("APNG 编码器未加载，请刷新页面。", "error");
+            return;
+          }
+
+          setBusy(true);
+          setStatus("正在准备导出动效 APNG...", "");
+          setExportProgress(4, "准备中");
+
+          try {
+            if (!window.pako || typeof window.pako.deflate !== "function") {
+              setStatus("正在加载 APNG 压缩器...", "");
+              setExportProgress(6, "加载压缩器");
+              await ensurePakoLoaded();
+            }
+
+            const maxEdge = 960;
+            const sourceWidth = Math.max(1, effectImage.naturalWidth || 1);
+            const sourceHeight = Math.max(1, effectImage.naturalHeight || 1);
+            const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+            const baseOutWidth = Math.max(1, Math.round(sourceWidth * scale));
+            const baseOutHeight = Math.max(1, Math.round(sourceHeight * scale));
+            const tone = toneMap[effectTone.value] || toneMap.teal;
+            const intensity = Number.parseInt(effectIntensity.value, 10) / 100;
+            const speedInput = Number.parseInt(effectSpeed.value, 10) / 100;
+            const speedRate = 1 + (speedInput - 1) * 0.45;
+            const durationMs = Math.max(1800, 3000 / speedRate);
+            const baseFrameCount = Math.max(30, Math.round((durationMs / 1000) * 16));
+            const sizeLimitBytes = 10 * 1024 * 1024;
+            const attempts = [
+              { scale: 1, frameScale: 1, colors: 0 },
+              { scale: 0.92, frameScale: 0.95, colors: 256 },
+              { scale: 0.84, frameScale: 0.9, colors: 192 },
+              { scale: 0.76, frameScale: 0.84, colors: 128 },
+              { scale: 0.68, frameScale: 0.78, colors: 96 },
+              { scale: 0.6, frameScale: 0.72, colors: 64 },
+            ];
+
+            let chosenBuffer = null;
+            let chosenWidth = 0;
+            let chosenHeight = 0;
+            let bestBuffer = null;
+            let bestWidth = 0;
+            let bestHeight = 0;
+
+            for (let attemptIndex = 0; attemptIndex < attempts.length; attemptIndex += 1) {
+              const config = attempts[attemptIndex];
+              const outWidth = Math.max(1, Math.round(baseOutWidth * config.scale));
+              const outHeight = Math.max(1, Math.round(baseOutHeight * config.scale));
+              const drawRect = getContainRect(sourceWidth, sourceHeight, outWidth, outHeight);
+              const frameCount = Math.max(18, Math.round(baseFrameCount * config.frameScale));
+              const delay = Math.max(24, Math.round(durationMs / frameCount));
+              const loopDurationMs = delay * frameCount;
+
+              const frameCanvas = document.createElement("canvas");
+              frameCanvas.width = outWidth;
+              frameCanvas.height = outHeight;
+              const frameCtx = frameCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
+              frameCtx.imageSmoothingEnabled = true;
+              frameCtx.imageSmoothingQuality = "high";
+
+              const frames = [];
+              const delays = [];
+
+              for (let i = 0; i < frameCount; i += 1) {
+                const time = (i / frameCount) * loopDurationMs;
+                drawEffectFrameToCanvas(frameCtx, time, outWidth, outHeight, drawRect, tone, intensity);
+                const data = frameCtx.getImageData(0, 0, outWidth, outHeight).data;
+                frames.push(data.buffer.slice(0));
+                delays.push(delay);
+
+                const stageProgress = (attemptIndex + (i + 1) / frameCount) / attempts.length;
+                const writeProgress = 8 + stageProgress * 72;
+                setExportProgress(writeProgress, "APNG 方案" + (attemptIndex + 1) + " 写帧");
+                setStatus("写入 APNG 帧（方案 " + (attemptIndex + 1) + "）" + (i + 1) + " / " + frameCount, "");
+              }
+
+              setStatus("正在编码 APNG（方案 " + (attemptIndex + 1) + "）...", "");
+              const apngBuffer = window.UPNG.encode(frames, outWidth, outHeight, config.colors, delays);
+              const sizeBytes = apngBuffer.byteLength;
+
+              if (!bestBuffer || sizeBytes < bestBuffer.byteLength) {
+                bestBuffer = apngBuffer;
+                bestWidth = outWidth;
+                bestHeight = outHeight;
+              }
+
+              if (sizeBytes <= sizeLimitBytes) {
+                chosenBuffer = apngBuffer;
+                chosenWidth = outWidth;
+                chosenHeight = outHeight;
+                break;
+              }
+            }
+
+            const finalBuffer = chosenBuffer || bestBuffer;
+            const finalWidth = chosenBuffer ? chosenWidth : bestWidth;
+            const finalHeight = chosenBuffer ? chosenHeight : bestHeight;
+
+            if (!finalBuffer) {
+              throw new Error("APNG 编码失败，请重试。");
+            }
+
+            const blob = new Blob([finalBuffer], { type: "image/png" });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = buildEffectApngName();
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 1500);
+
+            setExportProgress(100, "APNG 完成");
+
+            if (blob.size <= sizeLimitBytes) {
+              setStatus("导出完成，APNG 已开始下载（" + formatMB(blob.size) + "）。", "success");
+            } else {
+              setStatus("已导出最小可得 APNG（" + formatMB(blob.size) + "，仍大于 10MB）。", "success");
+            }
+
+            effectInfo.textContent = "图像信息：" + finalWidth + " x " + finalHeight + "（导出 APNG）";
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "导出 APNG 失败，请重试。";
+            setStatus(message, "error");
+            setExportProgress(0, "失败");
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        function toRgba(color, alpha) {
+          return "rgba(" + color.r + "," + color.g + "," + color.b + "," + alpha + ")";
+        }
+
+        function stripBackgroundAlpha(ctx, width, height, alphaCutoff) {
+          const imageData = ctx.getImageData(0, 0, width, height);
+          const pixels = imageData.data;
+          const blackCutoff = 24;
+          const neutralSpread = 18;
+          const hardAlphaCutoff = 156;
+          const glowCutoff = 56;
+          const keyRed = 255;
+          const keyGreen = 0;
+          const keyBlue = 255;
+
+          for (let i = 0; i < pixels.length; i += 4) {
+            const red = pixels[i];
+            const green = pixels[i + 1];
+            const blue = pixels[i + 2];
+            const alpha = pixels[i + 3];
+            const maxChannel = Math.max(red, green, blue);
+            const minChannel = Math.min(red, green, blue);
+            const isNearBlack = maxChannel <= blackCutoff && maxChannel - minChannel <= neutralSpread;
+            const isWeakGlow = alpha < hardAlphaCutoff && maxChannel <= glowCutoff;
+
+            if (alpha <= alphaCutoff || isNearBlack || isWeakGlow) {
+              pixels[i] = keyRed;
+              pixels[i + 1] = keyGreen;
+              pixels[i + 2] = keyBlue;
+              pixels[i + 3] = 255;
+              continue;
+            }
+
+            // GIF 只有单一透明索引，半透明边缘会变脏，导出前做硬化更干净。
+            pixels[i + 3] = 255;
+          }
+
+          ctx.putImageData(imageData, 0, 0);
+        }
+
+        function syncCanvas() {
+          const rect = effectStage.getBoundingClientRect();
+          const width = Math.max(1, Math.round(rect.width));
+          const height = Math.max(1, Math.round(rect.height));
+          const dpr = window.devicePixelRatio || 1;
+
+          if (width === state.rectWidth && height === state.rectHeight && dpr === state.dpr) {
+            return;
+          }
+
+          state.rectWidth = width;
+          state.rectHeight = height;
+          state.dpr = dpr;
+
+          effectGlow.width = Math.round(width * dpr);
+          effectGlow.height = Math.round(height * dpr);
+          effectGlow.style.width = width + "px";
+          effectGlow.style.height = height + "px";
+          state.glowCtx = effectGlow.getContext("2d");
+          state.glowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          effectSparkCanvas.width = Math.round(width * dpr);
+          effectSparkCanvas.height = Math.round(height * dpr);
+          effectSparkCanvas.style.width = width + "px";
+          effectSparkCanvas.style.height = height + "px";
+          state.sparkCtx = effectSparkCanvas.getContext("2d");
+          state.sparkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function rebuildSparks() {
+          const density = Number.parseInt(effectSpark.value, 10);
+          const count = Math.max(8, Math.round((density / 100) * 88));
+          const points = state.edgePoints.length ? state.edgePoints : [{ x: 0.5, y: 0.5 }];
+          const sparks = [];
+
+          for (let i = 0; i < count; i += 1) {
+            const point = points[Math.floor(Math.random() * points.length)];
+            const layerRoll = Math.random();
+            let layerRatio = 0.2;
+
+            if (layerRoll < 0.33) {
+              layerRatio = 0.2;
+            } else if (layerRoll < 0.7) {
+              layerRatio = 0.5;
+            } else {
+              layerRatio = 0.82;
+            }
+
+            sparks.push({
+              anchorX: point.x,
+              anchorY: point.y,
+              layerRatio,
+              layerSpread: (Math.random() - 0.5) * (0.05 + Math.random() * 0.1),
+              verticalSpan: 5 + Math.random() * 13,
+              verticalJitter: 2 + Math.random() * 6,
+              sway: 0.7 + Math.random() * 1.9,
+              radius: 0.35 + Math.random() * 0.7,
+              phase: Math.random() * Math.PI * 2,
+            });
+          }
+
+          state.sparks = sparks;
+        }
+
+        function buildEdgePoints(image) {
+          const sampleWidth = 420;
+          const scale = Math.min(1, sampleWidth / Math.max(image.naturalWidth, image.naturalHeight));
+          const width = Math.max(1, Math.round(image.naturalWidth * scale));
+          const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(image, 0, 0, width, height);
+
+          const pixels = ctx.getImageData(0, 0, width, height).data;
+          const edgeCanvas = document.createElement("canvas");
+          edgeCanvas.width = width;
+          edgeCanvas.height = height;
+          const edgeCtx = edgeCanvas.getContext("2d");
+          const edgeImage = edgeCtx.createImageData(width, height);
+          const edgePixels = edgeImage.data;
+
+          const points = [];
+          const alphaThreshold = 20;
+
+          function luminance(index) {
+            return pixels[index] * 0.2126 + pixels[index + 1] * 0.7152 + pixels[index + 2] * 0.0722;
+          }
+
+          for (let y = 1; y < height - 1; y += 1) {
+            for (let x = 1; x < width - 1; x += 1) {
+              const idx = (y * width + x) * 4;
+              const alpha = pixels[idx + 3];
+
+              if (alpha <= alphaThreshold) {
+                continue;
+              }
+
+              const leftLum = luminance(idx - 4);
+              const rightLum = luminance(idx + 4);
+              const topLum = luminance(idx - width * 4);
+              const bottomLum = luminance(idx + width * 4);
+              const gradient = Math.abs(leftLum - rightLum) + Math.abs(topLum - bottomLum);
+
+              if (gradient > 18) {
+                const edgeAlpha = Math.max(0, Math.min(255, Math.round((gradient - 12) * 5.8 * (alpha / 255))));
+                edgePixels[idx] = 255;
+                edgePixels[idx + 1] = 255;
+                edgePixels[idx + 2] = 255;
+                edgePixels[idx + 3] = edgeAlpha;
+
+                if ((x + y) % 2 === 0 && gradient > 28) {
+                  points.push({ x: x / width, y: y / height });
+                }
+              }
+            }
+          }
+
+          if (points.length < 48) {
+            for (let y = 2; y < height - 2; y += 6) {
+              for (let x = 2; x < width - 2; x += 6) {
+                const idx = (y * width + x) * 4;
+                if (pixels[idx + 3] > alphaThreshold + 30) {
+                  points.push({ x: x / width, y: y / height });
+                }
+              }
+            }
+          }
+
+          edgeCtx.putImageData(edgeImage, 0, 0);
+          state.edgeCanvas = edgeCanvas;
+
+          state.edgePoints = points.slice(0, 720);
+        }
+
+        function drawFrame(time) {
+          if (!state.imageReady || effectStage.classList.contains("hidden")) {
+            state.rafId = requestAnimationFrame(drawFrame);
+            return;
+          }
+
+          syncCanvas();
+
+          const glowCtx = state.glowCtx || effectGlow.getContext("2d");
+          const sparkCtx = state.sparkCtx || effectSparkCanvas.getContext("2d");
+          const width = state.rectWidth;
+          const height = state.rectHeight;
+          const intensity = Number.parseInt(effectIntensity.value, 10) / 100;
+          const tone = toneMap[effectTone.value] || toneMap.teal;
+          const drawRect = getContainRect(effectImage.naturalWidth || width, effectImage.naturalHeight || height, width, height);
+          const pulse = 0.45 + 0.55 * Math.sin((Math.PI * 2 * time) / 3000);
+          const targetFloatOffset = Math.sin((Math.PI * 2 * time) / 3000 + Math.PI / 3) * (3 + 10 * intensity);
+          const frameDelta = state.lastFrameTime > 0 ? Math.min(48, Math.max(1, time - state.lastFrameTime)) : 16;
+          state.lastFrameTime = time;
+          const smoothFactor = 1 - Math.exp(-frameDelta / 72);
+          state.smoothedFloat += (targetFloatOffset - state.smoothedFloat) * smoothFactor;
+          const floatOffset = state.smoothedFloat;
+          const breathingOpacity = 0.72 + 0.28 * pulse;
+
+          glowCtx.clearRect(0, 0, width, height);
+          sparkCtx.clearRect(0, 0, width, height);
+
+          const animatedRect = {
+            x: drawRect.x,
+            y: drawRect.y + floatOffset,
+            width: drawRect.width,
+            height: drawRect.height,
+          };
+
+          drawGlowLayer(glowCtx, time, animatedRect, tone, intensity, state.edgeCanvas);
+          drawReferenceStyleOverlays(glowCtx, time, animatedRect, tone, intensity);
+
+          const bright = 0.96 + pulse * 0.26 * intensity;
+          const sat = 1.04 + pulse * 0.28 * intensity;
+          const shadowBlur = Math.round(8 + pulse * 24 * intensity);
+          const shadowAlpha = (0.24 + 0.42 * pulse * intensity).toFixed(3);
+          effectImage.style.filter =
+            "drop-shadow(0 0 " + shadowBlur + "px rgba(" + tone.core.r + "," + tone.core.g + "," + tone.core.b + "," + shadowAlpha + ")) " +
+            "brightness(" + bright.toFixed(3) + ") saturate(" + sat.toFixed(3) + ")";
+          effectImage.style.opacity = breathingOpacity.toFixed(3);
+          effectImage.style.transform = "translate3d(0," + floatOffset.toFixed(3) + "px,0)";
+
+          drawLayeredParticles(sparkCtx, time, animatedRect, tone, pulse);
+          state.rafId = requestAnimationFrame(drawFrame);
+        }
+
+        async function applyImage(file) {
+          if (!(file instanceof File) || !file.type.startsWith("image/")) {
+            return;
+          }
+
+          setStatus("正在加载图片...", "");
+          setMeter(12);
+
+          if (state.objectUrl) {
+            URL.revokeObjectURL(state.objectUrl);
+          }
+
+          state.objectUrl = URL.createObjectURL(file);
+          effectImage.src = state.objectUrl;
+
+          await new Promise((resolve, reject) => {
+            effectImage.onload = resolve;
+            effectImage.onerror = reject;
+          });
+
+          buildEdgePoints(effectImage);
+          rebuildSparks();
+          state.imageReady = true;
+          state.smoothedFloat = 0;
+          state.lastFrameTime = 0;
+          effectStage.classList.remove("hidden");
+          effectPlaceholder.classList.add("hidden");
+          effectTag.textContent = "状态：动效运行中";
+          effectInfo.textContent = "图像信息：" + effectImage.naturalWidth + " x " + effectImage.naturalHeight;
+          effectMeta.textContent = "源文件：" + file.name;
+          setStatus("动效已生成，可调整强度、密度与速率。", "success");
+          setMeter(100);
+          effectExportProgress.textContent = "导出进度：0%";
+          setBusy(false);
+
+          if (!state.rafId) {
+            state.rafId = requestAnimationFrame(drawFrame);
+          }
+        }
+
+        function clearEffect() {
+          if (state.objectUrl) {
+            URL.revokeObjectURL(state.objectUrl);
+          }
+
+          state.objectUrl = "";
+          state.edgePoints = [];
+          state.edgeCanvas = null;
+          state.sparks = [];
+          state.imageReady = false;
+          state.smoothedFloat = 0;
+          state.lastFrameTime = 0;
+          effectImage.src = "";
+          effectImage.style.filter = "";
+          effectImage.style.opacity = "1";
+          effectImage.style.transform = "translate3d(0,0,0)";
+          effectStage.classList.add("hidden");
+          effectPlaceholder.classList.remove("hidden");
+          effectTag.textContent = "状态：未加载";
+          effectInfo.textContent = "图像信息：-";
+          effectMeta.textContent = "未上传图片";
+          setStatus("等待上传图片...", "");
+          setMeter(0);
+          effectExportProgress.textContent = "导出进度：0%";
+          setBusy(false);
+          effectExportBtn.disabled = true;
+          effectExportApngBtn.disabled = true;
+        }
+
+        effectFileInput.addEventListener("change", (event) => {
+          const file = event.target.files && event.target.files[0];
+
+          if (!file) {
+            return;
+          }
+
+          applyImage(file).catch(() => {
+            setStatus("图片加载失败，请更换文件。", "error");
+            setMeter(0);
+          });
+        });
+
+        effectResetBtn.addEventListener("click", () => {
+          clearEffect();
+          effectFileInput.value = "";
+        });
+
+        effectExportBtn.addEventListener("click", () => {
+          exportEffectGif();
+        });
+
+        effectExportApngBtn.addEventListener("click", () => {
+          exportEffectApng();
+        });
+
+        effectIntensity.addEventListener("input", () => {
+          effectIntensityVal.textContent = effectIntensity.value;
+          setMeter(Math.max(14, Number.parseInt(effectIntensity.value, 10)));
+        });
+
+        effectSpark.addEventListener("input", () => {
+          effectSparkVal.textContent = effectSpark.value;
+          rebuildSparks();
+        });
+
+        effectSpeed.addEventListener("input", () => {
+          effectSpeedVal.textContent = effectSpeed.value + "%";
+        });
+
+        effectTone.addEventListener("change", () => {
+          if (effectTone.value === "blue") {
+            setStatus("已切换到参考图同款的冰蓝能量风格。", "success");
+            return;
+          }
+
+          setStatus("已切换色调。", "success");
+        });
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+          effectDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            effectDropzone.classList.add("drag");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+          effectDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            effectDropzone.classList.remove("drag");
+          });
+        });
+
+        effectDropzone.addEventListener("drop", (event) => {
+          const file = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files[0] : null;
+
+          if (!file) {
+            return;
+          }
+
+          applyImage(file).catch(() => {
+            setStatus("图片加载失败，请更换文件。", "error");
+            setMeter(0);
+          });
+        });
+
+        window.addEventListener("resize", syncCanvas);
+
+        window.addEventListener("beforeunload", () => {
+          if (state.objectUrl) {
+            URL.revokeObjectURL(state.objectUrl);
+          }
+
+          if (state.workerScriptUrl) {
+            URL.revokeObjectURL(state.workerScriptUrl);
+          }
+
+          if (state.rafId) {
+            cancelAnimationFrame(state.rafId);
+          }
+        });
+      })();
+
+      (function setupSequenceTool() {
+        const seqZipInput = document.getElementById("seqZipInput");
+        const seqFolderInput = document.getElementById("seqFolderInput");
+        const seqDropzone = document.getElementById("seqDropzone");
+        const seqFps = document.getElementById("seqFps");
+        const seqFpsVal = document.getElementById("seqFpsVal");
+        const seqQuality = document.getElementById("seqQuality");
+        const seqQualityVal = document.getElementById("seqQualityVal");
+        const seqMaxWidth = document.getElementById("seqMaxWidth");
+        const seqFit = document.getElementById("seqFit");
+        const seqLoop = document.getElementById("seqLoop");
+        const seqConvertBtn = document.getElementById("seqConvertBtn");
+        const seqDownloadBtn = document.getElementById("seqDownloadBtn");
+        const seqMeter = document.getElementById("seqMeter");
+        const seqStatus = document.getElementById("seqStatus");
+        const seqSummary = document.getElementById("seqSummary");
+        const seqFrameCount = document.getElementById("seqFrameCount");
+        const seqFrameSize = document.getElementById("seqFrameSize");
+        const seqHint = document.getElementById("seqHint");
+        const seqNames = document.getElementById("seqNames");
+        const seqFirstPreview = document.getElementById("seqFirstPreview");
+        const seqGifPreview = document.getElementById("seqGifPreview");
+        const seqPlaceholder = document.getElementById("seqPlaceholder");
+        const seqTag = document.getElementById("seqTag");
+        const seqOutputInfo = document.getElementById("seqOutputInfo");
+
+        const imagePattern = /\.(png|jpe?g|webp|bmp)$/i;
+        const collator = new Intl.Collator("zh-CN", { numeric: true, sensitivity: "base" });
+        const gifWorkerRemote = "https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.worker.js";
+
+        const state = {
+          frames: [],
+          firstUrl: "",
+          outputUrl: "",
+          outputBlob: null,
+          workerScriptUrl: "",
+          busy: false,
+        };
+
+        function setStatus(text, type) {
+          seqStatus.textContent = text;
+          seqStatus.classList.remove("error", "success");
+
+          if (type) {
+            seqStatus.classList.add(type);
+          }
+        }
+
+        function setProgress(value) {
+          seqMeter.style.width = Math.max(0, Math.min(100, Math.round(value))) + "%";
+        }
+
+        function isImage(name, type) {
+          if (type && type.startsWith("image/")) {
+            return true;
+          }
+
+          return imagePattern.test(name || "");
+        }
+
+        function guessType(name) {
+          const lower = (name || "").toLowerCase();
+
+          if (lower.endsWith(".png")) {
+            return "image/png";
+          }
+
+          if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+            return "image/jpeg";
+          }
+
+          if (lower.endsWith(".webp")) {
+            return "image/webp";
+          }
+
+          if (lower.endsWith(".bmp")) {
+            return "image/bmp";
+          }
+
+          return "application/octet-stream";
+        }
+
+        function sortFrames(frames) {
+          return frames.sort((a, b) => collator.compare(a.name, b.name));
+        }
+
+        function setBusy(flag) {
+          state.busy = flag;
+          seqConvertBtn.disabled = flag || !state.frames.length;
+          seqZipInput.disabled = flag;
+          seqFolderInput.disabled = flag;
+        }
+
+        function resetOutput() {
+          if (state.outputUrl) {
+            URL.revokeObjectURL(state.outputUrl);
+          }
+
+          state.outputUrl = "";
+          state.outputBlob = null;
+          seqDownloadBtn.disabled = true;
+          seqGifPreview.src = "";
+          seqGifPreview.classList.add("hidden");
+          seqOutputInfo.textContent = "输出信息：-";
+
+          if (state.firstUrl) {
+            seqFirstPreview.classList.remove("hidden");
+            seqTag.textContent = "预览：首帧";
+          }
+        }
+
+        async function resolveWorker() {
+          if (state.workerScriptUrl) {
+            return state.workerScriptUrl;
+          }
+
+          const response = await fetch(gifWorkerRemote, { cache: "force-cache" });
+
+          if (!response.ok) {
+            throw new Error("无法加载 GIF worker，请检查网络后重试。");
+          }
+
+          const script = await response.text();
+          state.workerScriptUrl = URL.createObjectURL(new Blob([script], { type: "application/javascript" }));
+          return state.workerScriptUrl;
+        }
+
+        async function loadZip(file) {
+          if (typeof window.JSZip !== "function") {
+            throw new Error("JSZip 未加载，请刷新页面。");
+          }
+
+          const zip = await window.JSZip.loadAsync(file);
+          const entries = Object.values(zip.files).filter((entry) => !entry.dir && isImage(entry.name, ""));
+
+          if (!entries.length) {
+            throw new Error("ZIP 内没有可用图片帧。");
+          }
+
+          const frames = [];
+
+          for (const entry of entries) {
+            const blob = await entry.async("blob");
+            const typed = blob.type ? blob : blob.slice(0, blob.size, guessType(entry.name));
+            frames.push({ name: entry.name, blob: typed });
+          }
+
+          return sortFrames(frames);
+        }
+
+        function loadFolder(fileList) {
+          const files = Array.from(fileList || []).filter((file) => isImage(file.name, file.type));
+
+          if (!files.length) {
+            throw new Error("没有检测到可用图片帧。");
+          }
+
+          return sortFrames(files.map((file) => ({
+            name: file.webkitRelativePath || file.name,
+            blob: file,
+          })));
+        }
+
+        async function getSize(blob) {
+          const bitmap = await createImageBitmap(blob);
+
+          try {
+            return { width: bitmap.width, height: bitmap.height };
+          } finally {
+            bitmap.close();
+          }
+        }
+
+        function renderNamePreview(frames) {
+          const show = frames.slice(0, 8).map((frame) => frame.name.split("/").pop());
+          const extra = Math.max(0, frames.length - show.length);
+          const extraText = extra ? " ... +" + extra + " 帧" : "";
+          seqNames.textContent = "排序预览：" + show.join(" , ") + extraText;
+          seqNames.classList.remove("hidden");
+        }
+
+        async function applyFrames(frames) {
+          resetOutput();
+          state.frames = frames;
+          const size = await getSize(frames[0].blob);
+
+          if (state.firstUrl) {
+            URL.revokeObjectURL(state.firstUrl);
+          }
+
+          state.firstUrl = URL.createObjectURL(frames[0].blob);
+          seqFirstPreview.src = state.firstUrl;
+          seqFirstPreview.classList.remove("hidden");
+          seqPlaceholder.classList.add("hidden");
+
+          seqSummary.querySelector("strong").textContent = "序列帧已载入";
+          seqFrameCount.textContent = "帧数：" + frames.length;
+          seqFrameSize.textContent = "尺寸：" + size.width + " x " + size.height;
+          seqHint.textContent = "已按文件名自动排序。若顺序异常，请检查编号命名。";
+          renderNamePreview(frames);
+          seqTag.textContent = "预览：首帧";
+          setStatus("已载入 " + frames.length + " 帧，可开始转换。", "success");
+          setProgress(12);
+          seqConvertBtn.disabled = false;
+        }
+
+        function drawFrame(ctx, bitmap, outWidth, outHeight, fitMode) {
+          ctx.clearRect(0, 0, outWidth, outHeight);
+
+          if (fitMode === "stretch") {
+            ctx.drawImage(bitmap, 0, 0, outWidth, outHeight);
+            return;
+          }
+
+          const scale = fitMode === "cover"
+            ? Math.max(outWidth / bitmap.width, outHeight / bitmap.height)
+            : Math.min(outWidth / bitmap.width, outHeight / bitmap.height);
+
+          const drawWidth = bitmap.width * scale;
+          const drawHeight = bitmap.height * scale;
+          const offsetX = (outWidth - drawWidth) / 2;
+          const offsetY = (outHeight - drawHeight) / 2;
+          ctx.drawImage(bitmap, offsetX, offsetY, drawWidth, drawHeight);
+        }
+
+        async function convertGif() {
+          if (state.busy || !state.frames.length) {
+            return;
+          }
+
+          if (typeof window.GIF !== "function") {
+            setStatus("GIF 依赖未加载，请刷新页面。", "error");
+            return;
+          }
+
+          setBusy(true);
+          resetOutput();
+          setStatus("开始转换...", "");
+          setProgress(2);
+
+          const fps = Number.parseInt(seqFps.value, 10);
+          const quality = Number.parseInt(seqQuality.value, 10);
+          const maxWidth = Number.parseInt(seqMaxWidth.value, 10);
+          const fitMode = seqFit.value;
+          const repeat = seqLoop.value === "infinite" ? 0 : -1;
+          const delay = Math.max(10, Math.round(1000 / Math.max(1, fps)));
+
+          try {
+            const workerScript = await resolveWorker();
+            const firstBitmap = await createImageBitmap(state.frames[0].blob);
+            const scale = maxWidth > 0 ? Math.min(1, maxWidth / firstBitmap.width) : 1;
+            const outWidth = Math.max(1, Math.round(firstBitmap.width * scale));
+            const outHeight = Math.max(1, Math.round(firstBitmap.height * scale));
+            firstBitmap.close();
+
+            const canvas = document.createElement("canvas");
+            canvas.width = outWidth;
+            canvas.height = outHeight;
+            const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: true });
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+
+            const gif = new window.GIF({
+              workers: 2,
+              quality,
+              width: outWidth,
+              height: outHeight,
+              repeat,
+              workerScript,
+            });
+
+            gif.on("progress", (p) => {
+              const percent = 40 + p * 60;
+              setProgress(percent);
+              setStatus("GIF 编码中：" + Math.round(percent) + "%", "");
+            });
+
+            for (let i = 0; i < state.frames.length; i += 1) {
+              const bitmap = await createImageBitmap(state.frames[i].blob);
+
+              try {
+                drawFrame(ctx, bitmap, outWidth, outHeight, fitMode);
+                gif.addFrame(canvas, {
+                  delay,
+                  copy: true,
+                });
+              } finally {
+                bitmap.close();
+              }
+
+              const loadProgress = ((i + 1) / state.frames.length) * 40;
+              setProgress(loadProgress);
+              setStatus("写入帧 " + (i + 1) + " / " + state.frames.length, "");
+            }
+
+            const blob = await new Promise((resolve) => {
+              gif.on("finished", resolve);
+              gif.render();
+            });
+
+            state.outputBlob = blob;
+            state.outputUrl = URL.createObjectURL(blob);
+            seqGifPreview.src = state.outputUrl;
+            seqGifPreview.classList.remove("hidden");
+            seqFirstPreview.classList.add("hidden");
+            seqTag.textContent = "预览：GIF";
+            seqDownloadBtn.disabled = false;
+            setProgress(100);
+
+            const kb = Math.round(blob.size / 1024);
+            seqOutputInfo.textContent = "输出信息：" + outWidth + " x " + outHeight + " / " + kb + " KB";
+            setStatus("转换完成，可预览与下载。", "success");
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "转换失败，请重试。";
+            setStatus(message, "error");
+            setProgress(0);
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        function buildName() {
+          const now = new Date();
+          const yyyy = String(now.getFullYear());
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          const hh = String(now.getHours()).padStart(2, "0");
+          const mi = String(now.getMinutes()).padStart(2, "0");
+          const ss = String(now.getSeconds()).padStart(2, "0");
+          return "sequence-" + yyyy + mm + dd + "-" + hh + mi + ss + ".gif";
+        }
+
+        function downloadGif() {
+          if (!state.outputBlob || !state.outputUrl) {
+            return;
+          }
+
+          const link = document.createElement("a");
+          link.href = state.outputUrl;
+          link.download = buildName();
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }
+
+        async function handleZip(file) {
+          try {
+            setStatus("正在解析 ZIP...", "");
+            setProgress(6);
+            const frames = await loadZip(file);
+            await applyFrames(frames);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "ZIP 解析失败。";
+            setStatus(message, "error");
+            setProgress(0);
+          }
+        }
+
+        async function handleFolder(fileList) {
+          try {
+            setStatus("正在读取图片文件...", "");
+            setProgress(6);
+            const frames = loadFolder(fileList);
+            await applyFrames(frames);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "文件读取失败。";
+            setStatus(message, "error");
+            setProgress(0);
+          }
+        }
+
+        seqFps.addEventListener("input", () => {
+          seqFpsVal.textContent = seqFps.value;
+        });
+
+        seqQuality.addEventListener("input", () => {
+          seqQualityVal.textContent = seqQuality.value;
+        });
+
+        seqZipInput.addEventListener("change", (event) => {
+          const file = event.target.files && event.target.files[0];
+
+          if (!file) {
+            return;
+          }
+
+          seqFolderInput.value = "";
+          handleZip(file);
+        });
+
+        seqFolderInput.addEventListener("change", (event) => {
+          const files = event.target.files;
+
+          if (!files || !files.length) {
+            return;
+          }
+
+          seqZipInput.value = "";
+          handleFolder(files);
+        });
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+          seqDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            seqDropzone.classList.add("drag");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+          seqDropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            seqDropzone.classList.remove("drag");
+          });
+        });
+
+        seqDropzone.addEventListener("drop", (event) => {
+          const files = event.dataTransfer && event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+
+          if (!files.length) {
+            return;
+          }
+
+          const zip = files.find((file) => file.name.toLowerCase().endsWith(".zip"));
+
+          if (zip) {
+            seqZipInput.value = "";
+            seqFolderInput.value = "";
+            handleZip(zip);
+            return;
+          }
+
+          handleFolder(files);
+        });
+
+        seqConvertBtn.addEventListener("click", () => {
+          convertGif();
+        });
+
+        seqDownloadBtn.addEventListener("click", () => {
+          downloadGif();
+        });
+
+        window.addEventListener("beforeunload", () => {
+          if (state.firstUrl) {
+            URL.revokeObjectURL(state.firstUrl);
+          }
+
+          if (state.outputUrl) {
+            URL.revokeObjectURL(state.outputUrl);
+          }
+
+          if (state.workerScriptUrl) {
+            URL.revokeObjectURL(state.workerScriptUrl);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

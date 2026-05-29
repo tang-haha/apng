@@ -323,9 +323,16 @@
       }
 
       .placeholder {
+        width: min(92%, 760px);
+        min-height: 100%;
         color: #637180;
         text-align: center;
         padding: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         z-index: 1;
       }
 
@@ -347,7 +354,7 @@
 
       .placeholder strong {
         display: block;
-        margin-bottom: 8px;
+        margin: 0;
       }
 
       .seq-preview,
